@@ -1,0 +1,6 @@
+config:
+  commandWait: 2
+  chatWait: 1
+  chatLimit: 10
+  dirtyList:
+  - "你妈"

@@ -1,0 +1,13 @@
+name: AntiSpam
+version: 0.2.4
+main: com.mengcraft.server.AntiSpam
+
+permissions:
+  spam.anti:
+    default: true
+  spam.admin:
+    default: op
+
+commands:
+  spam:
+    permission: spam.admin
