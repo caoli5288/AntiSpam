@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.mengcraft</groupId>
 	<artifactId>antispam</artifactId>
-	<version>0.3.0-snapshot</version>
+	<version>0.3.0</version>
 	<repositories>
 		<repository>
 			<id>repo.md-5.net</id>
