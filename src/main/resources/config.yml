@@ -3,4 +3,7 @@ config:
   chatWait: 1
   chatLimit: 10
   dirtyList:
-  - "你妈"
+  - '你妈'
+  commandWhiteList:
+  - '/cj'
+  - '/spam'

@@ -1,13 +1,16 @@
 name: AntiSpam
-version: 0.3.0
+version: 0.3.2
 main: com.mengcraft.server.AntiSpam
 
 permissions:
   spam.anti:
+    description: Default permission for this plug-in.
     default: true
   spam.admin:
+    description: Operator permission for this plug-in.
     default: op
 
 commands:
   spam:
     permission: spam.admin
+    description: Operator command for this plug-in.

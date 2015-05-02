@@ -1,6 +1,13 @@
 package com.mengcraft.server;
 
-import org.bukkit.Bukkit;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -11,9 +18,6 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.mcstats.Metrics;
-
-import java.io.IOException;
-import java.util.*;
 
 /**
  * GPLv2 license
@@ -30,11 +34,11 @@ public class AntiSpam extends JavaPlugin {
 	public void onEnable() {
 		getServer().getPluginManager().registerEvents(new AntiListener(), this);
 		getServer().getPluginCommand("spam").setExecutor(new Commander());
-		String[] strings = {
-				ChatColor.GREEN + "梦梦家高性能服务器出租"
-				, ChatColor.GREEN + "淘宝店 http://shop105595113.taobao.com"
+		String[] lines = {
+				ChatColor.GREEN + "梦梦家高性能服务器出租店",
+				ChatColor.GREEN + "shop105595113.taobao.com"
 		};
-		Bukkit.getConsoleSender().sendMessage(strings);
+		getServer().getConsoleSender().sendMessage(lines);
 		try {
 			new Metrics(this).start();
 		} catch (IOException e) {
@@ -43,6 +47,7 @@ public class AntiSpam extends JavaPlugin {
 	}
 
 	private class Commander implements CommandExecutor {
+
 		@Override
 		public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 			if (args.length < 1) {
@@ -142,7 +147,7 @@ public class AntiSpam extends JavaPlugin {
 		@EventHandler(ignoreCancelled = true)
 		public void command(PlayerCommandPreprocessEvent event) {
 			boolean b = event.getPlayer().hasPermission("spam.anti")
-					&& !event.getMessage().startsWith("/spam");
+					&& checkCommandWhiteList(event.getMessage()) == 0;
 			if (b) {
 				String name = event.getPlayer().getName();
 				if (isNoCommandTime(name)) {
@@ -158,6 +163,16 @@ public class AntiSpam extends JavaPlugin {
 					commandWait.put(name, System.currentTimeMillis() / 1000);
 				}
 			}
+		}
+
+		private int checkCommandWhiteList(String msg) {
+			List<String> list = getConfig().getStringList("config.commandWhiteList");
+			for (String line : list) {
+				if (msg.startsWith(line)) {
+					return 1;
+				}
+			}
+			return 0;
 		}
 
 		@EventHandler(ignoreCancelled = true)
@@ -211,20 +226,24 @@ public class AntiSpam extends JavaPlugin {
 		}
 
 		private boolean isNoCommandTime(String name) {
-			return commandWait.get(name) != null && commandWait.get(name) + getConfig().getLong("config.commandWait", 1) > System.currentTimeMillis() / 1000;
+			return commandWait.get(name) != null
+					&& commandWait.get(name) + getConfig().getLong("config.commandWait", 1) > System
+							.currentTimeMillis() / 1000;
 		}
-		
+
 		private boolean isNoChatTime(String name) {
 			/*
 			 * long last = lastTime.get(name);long current =
 			 * System.currentTimeMillis() / 1000;long delay =
 			 * getConfig().getLong("config.chatWait", 1);
 			 */
-			return lastTime.get(name) != null && lastTime.get(name) + getConfig().getLong("config.chatWait", 1) > System.currentTimeMillis() / 1000;
+			return lastTime.get(name) != null
+					&& lastTime.get(name) + getConfig().getLong("config.chatWait", 1) > System.currentTimeMillis() / 1000;
 		}
 
 		private boolean isChatLimitTime(String name) {
-			return lastTime.get(name) != null && lastTime.get(name) + getConfig().getLong("config.chatLimit", 10) > System.currentTimeMillis() / 1000;
+			return lastTime.get(name) != null
+					&& lastTime.get(name) + getConfig().getLong("config.chatLimit", 10) > System.currentTimeMillis() / 1000;
 		}
 	}
 }
