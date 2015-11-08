@@ -25,225 +25,226 @@ import org.mcstats.Metrics;
 
 public class AntiSpam extends JavaPlugin {
 
-	@Override
-	public void onLoad() {
-		saveDefaultConfig();
-	}
+    private final Set<String> dirtySet = new HashSet<>();
 
-	@Override
-	public void onEnable() {
-		getServer().getPluginManager().registerEvents(new AntiListener(), this);
-		getServer().getPluginCommand("spam").setExecutor(new Commander());
-		String[] lines = {
-				ChatColor.GREEN + "梦梦家高性能服务器出租店",
-				ChatColor.GREEN + "shop105595113.taobao.com"
-		};
-		getServer().getConsoleSender().sendMessage(lines);
-		try {
-			new Metrics(this).start();
-		} catch (IOException e) {
-			getLogger().warning("Can not connect to mcstats.org!");
-		}
-	}
+    @Override
+    public void onLoad() {
+        saveDefaultConfig();
+    }
 
-	private class Commander implements CommandExecutor {
+    @Override
+    public void onEnable() {
+        for (String line : getConfig().getStringList("config.dirtyList")) {
+            dirtySet.add(line.toUpperCase());
+        }
 
-		@Override
-		public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-			if (args.length < 1) {
-				sendInfo(sender);
-			} else if (args.length < 2) {
-				switch (args[0]) {
-				case "list":
-					sendList(sender);
-					break;
-				case "reload":
-					sendReload(sender);
-					break;
-				default:
-					sendInfo(sender);
-					break;
-				}
-			} else if (args.length < 3) {
-				switch (args[0]) {
-				case "add":
-					setDirtyList(sender, args[1], true);
-					break;
-				case "remove":
-					setDirtyList(sender, args[1], false);
-					break;
-				default:
-					sendInfo(sender);
-					break;
-				}
-			} else {
-				sendInfo(sender);
-			}
-			return true;
-		}
+        String[] lines = {
+                ChatColor.GREEN + "梦梦家高性能服务器出租店",
+                ChatColor.GREEN + "shop105595113.taobao.com"
+        };
+        getServer().getConsoleSender().sendMessage(lines);
 
-		private void sendReload(CommandSender sender) {
-			reloadConfig();
-			sender.sendMessage(ChatColor.GREEN + "[AntiSpam] 重新读取配置文件完毕!");
-		}
+        try {
+            new Metrics(this).start();
+        } catch (IOException e) {
+            getLogger().warning(e.toString());
+        }
 
-		private void sendList(CommandSender sender) {
-			List<String> dirtyList = getConfig().getStringList("config.dirtyList");
-			dirtyList.add(0, "脏话列表:");
-			sender.sendMessage(dirtyList.toArray(new String[dirtyList.size()]));
-		}
+        getServer().getPluginManager().registerEvents(new AntiListener(), this);
+        getServer().getPluginCommand("spam").setExecutor(new Commander());
+    }
 
-		private void sendInfo(CommandSender sender) {
-			String[] message = {
-					ChatColor.GOLD + "/spam add abc           将 abc 添加到脏话列表",
-					ChatColor.GOLD + "/spam remove abc        将 abc 从脏话列表移除",
-					ChatColor.GOLD + "/spam list              显示脏话列表",
-					ChatColor.GOLD + "/spam reload            重新读取配置文件"
-			};
-			sender.sendMessage(message);
-		}
+    private class Commander implements CommandExecutor {
 
-		private void setDirtyList(CommandSender sender, String dirty, boolean isAdd) {
-			if (sender.hasPermission("spam.admin")) {
-				List<String> dirtyList = getConfig().getStringList("config.dirtyList");
-				Set<String> dirtySet = new HashSet<>(dirtyList);
-				if (isAdd) {
-					if (dirtySet.add(dirty)) {
-						String message = ChatColor.GREEN + "将 abc 添加到屏蔽列表成功".replaceAll("abc", dirty);
-						sender.sendMessage(message);
-						getConfig().set("config.dirtyList", new ArrayList<>(dirtySet));
-						saveConfig();
-					} else {
-						String message = ChatColor.RED + "将 abc 添加到屏蔽列表失败".replaceAll("abc", dirty);
-						sender.sendMessage(message);
-					}
-				} else {
-					if (dirtySet.remove(dirty)) {
-						String message = ChatColor.GREEN + "将 abc 从屏蔽列表移除成功".replaceAll("abc", dirty);
-						sender.sendMessage(message);
-						getConfig().set("config.dirtyList", new ArrayList<>(dirtySet));
-						saveConfig();
-					} else {
-						String message = ChatColor.RED + "将 abc 从屏蔽列表移除失败".replaceAll("abc", dirty);
-						sender.sendMessage(message);
-					}
-				}
-			}
-		}
-	}
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (args.length < 1) {
+                sendInfo(sender);
+            } else if (args.length < 2) {
+                switch (args[0]) {
+                    case "list":
+                        sendList(sender);
+                        break;
+                    case "reload":
+                        sendReload(sender);
+                        break;
+                    default:
+                        sendInfo(sender);
+                        break;
+                }
+            } else if (args.length < 3) {
+                switch (args[0]) {
+                    case "add":
+                        setDirtyList(sender, args[1].toUpperCase(), true);
+                        break;
+                    case "remove":
+                        setDirtyList(sender, args[1].toUpperCase(), false);
+                        break;
+                    default:
+                        sendInfo(sender);
+                        break;
+                }
+            } else {
+                sendInfo(sender);
+            }
+            return true;
+        }
 
-	private class AntiListener implements Listener {
+        private void sendReload(CommandSender sender) {
+            reloadConfig();
+            sender.sendMessage(ChatColor.GREEN + "[AntiSpam] 重新读取配置文件完毕!");
+        }
 
-		private final HashMap<String, Long> lastTime;
-		private final HashMap<String, String> lastMessage;
-		private final Map<String, Long> commandWait;
+        private void sendList(CommandSender sender) {
+            List<String> dirtyList = getConfig().getStringList("config.dirtyList");
+            dirtyList.add(0, "脏话列表:");
+            sender.sendMessage(dirtyList.toArray(new String[dirtyList.size()]));
+        }
 
-		public AntiListener() {
-			this.commandWait = new HashMap<String, Long>();
-			this.lastTime = new HashMap<>();
-			this.lastMessage = new HashMap<>();
-		}
+        private void sendInfo(CommandSender sender) {
+            String[] message = {
+                    ChatColor.GOLD + "/spam add abc           将 abc 添加到脏话列表",
+                    ChatColor.GOLD + "/spam remove abc        将 abc 从脏话列表移除",
+                    ChatColor.GOLD + "/spam list              显示脏话列表",
+                    ChatColor.GOLD + "/spam reload            重新读取配置文件"
+            };
+            sender.sendMessage(message);
+        }
 
-		@EventHandler(ignoreCancelled = true)
-		public void command(PlayerCommandPreprocessEvent event) {
-			boolean b = event.getPlayer().hasPermission("spam.anti")
-					&& checkCommandWhiteList(event.getMessage()) == 0;
-			if (b) {
-				String name = event.getPlayer().getName();
-				if (isNoCommandTime(name)) {
-					String message = ChatColor.RED + "你打命令太频繁了";
-					event.getPlayer().sendMessage(message);
-					event.setCancelled(true);
-				} else if (isDirty(event.getMessage())) {
-					String message = ChatColor.RED + "你疑似说脏话了";
-					event.getPlayer().sendMessage(message);
-					event.setCancelled(true);
-				} else {
-					lastMessage.put(name, event.getMessage());
-					commandWait.put(name, System.currentTimeMillis() / 1000);
-				}
-			}
-		}
+        private void setDirtyList(CommandSender sender, String dirty, boolean isAdd) {
+            if (sender.hasPermission("spam.admin")) {
+                if (isAdd) {
+                    if (dirtySet.add(dirty)) {
+                        String message = ChatColor.GREEN + "将 abc 添加到屏蔽列表成功".replaceAll("abc", dirty);
+                        sender.sendMessage(message);
 
-		private int checkCommandWhiteList(String msg) {
-			List<String> list = getConfig().getStringList("config.commandWhiteList");
-			for (String line : list) {
-				if (msg.startsWith(line)) {
-					return 1;
-				}
-			}
-			return 0;
-		}
+                        getConfig().set("config.dirtyList", new ArrayList<>(dirtySet));
+                        saveConfig();
+                    } else {
+                        String message = ChatColor.RED + "将 abc 添加到屏蔽列表失败".replaceAll("abc", dirty);
+                        sender.sendMessage(message);
+                    }
+                } else {
+                    if (dirtySet.remove(dirty)) {
+                        String message = ChatColor.GREEN + "将 abc 从屏蔽列表移除成功".replaceAll("abc", dirty);
+                        sender.sendMessage(message);
 
-		@EventHandler(ignoreCancelled = true)
-		public void chat(AsyncPlayerChatEvent event) {
-			if (event.getPlayer().hasPermission("spam.anti")) {
-				String name = event.getPlayer().getName();
-				if (isNoChatTime(name)) {
-					String message = ChatColor.RED + "你说话太频繁了";
-					event.getPlayer().sendMessage(message);
-					event.setCancelled(true);
-				} else if (isChatLimitTime(name) && isSimilar(name, event.getMessage())) {
-					String message = ChatColor.RED + "你疑似刷屏了";
-					event.getPlayer().sendMessage(message);
-					event.setCancelled(true);
-				} else if (isDirty(event.getMessage())) {
-					String message = ChatColor.RED + "你疑似说脏话了";
-					event.getPlayer().sendMessage(message);
-					event.setCancelled(true);
-				} else {
-					lastMessage.put(name, event.getMessage());
-					lastTime.put(name, System.currentTimeMillis() / 1000);
-				}
-			}
-		}
+                        getConfig().set("config.dirtyList", new ArrayList<>(dirtySet));
+                        saveConfig();
+                    } else {
+                        String message = ChatColor.RED + "将 abc 从屏蔽列表移除失败".replaceAll("abc", dirty);
+                        sender.sendMessage(message);
+                    }
+                }
+            }
+        }
+    }
 
-		private boolean isDirty(String message) {
-			List<String> dirtyList = getConfig().getStringList("config.dirtyList");
-			boolean isDirty = false;
-			for (String dirty : dirtyList) {
-				if (!isDirty) {
-					isDirty = message.contains(dirty);
-				} else {
-					break;
-				}
-			}
-			return isDirty;
-		}
+    private class AntiListener implements Listener {
 
-		private boolean isSimilar(String name, String message) {
-			String last = lastMessage.get(name);
-			if (last != null) {
-				if (last.length() > 1) {
-					int size = last.length() / 2;
-					String head = last.substring(0, size);
-					String tail = last.substring(size);
-					return message.contains(head) || message.contains(tail);
-				} else
-					return message.equals(last);
-			}
-			return false;
-		}
+        private final HashMap<String, Long> lastTime;
+        private final HashMap<String, String> lastMessage;
+        private final Map<String, Long> commandWait;
 
-		private boolean isNoCommandTime(String name) {
-			return commandWait.get(name) != null
-					&& commandWait.get(name) + getConfig().getLong("config.commandWait", 1) > System
-							.currentTimeMillis() / 1000;
-		}
+        public AntiListener() {
+            this.commandWait = new HashMap<>();
+            this.lastTime = new HashMap<>();
+            this.lastMessage = new HashMap<>();
+        }
 
-		private boolean isNoChatTime(String name) {
-			/*
-			 * long last = lastTime.get(name);long current =
+        @EventHandler(ignoreCancelled = true)
+        public void command(PlayerCommandPreprocessEvent event) {
+            boolean b = event.getPlayer().hasPermission("spam.anti")
+                    && checkCommandWhiteList(event.getMessage()) == 0;
+            if (b) {
+                String name = event.getPlayer().getName();
+                if (isNoCommandTime(name)) {
+                    String message = ChatColor.RED + "你打命令太频繁了";
+                    event.getPlayer().sendMessage(message);
+                    event.setCancelled(true);
+                } else if (isDirty(event.getMessage())) {
+                    String message = ChatColor.RED + "你疑似说脏话了";
+                    event.getPlayer().sendMessage(message);
+                    event.setCancelled(true);
+                } else {
+                    lastMessage.put(name, event.getMessage());
+                    commandWait.put(name, System.currentTimeMillis() / 1000);
+                }
+            }
+        }
+
+        private int checkCommandWhiteList(String msg) {
+            List<String> list = getConfig().getStringList("config.commandWhiteList");
+            for (String line : list) {
+                if (msg.startsWith(line)) {
+                    return 1;
+                }
+            }
+            return 0;
+        }
+
+        @EventHandler(ignoreCancelled = true)
+        public void chat(AsyncPlayerChatEvent event) {
+            if (event.getPlayer().hasPermission("spam.anti")) {
+                String name = event.getPlayer().getName();
+                if (isNoChatTime(name)) {
+                    String message = ChatColor.RED + "你说话太频繁了";
+                    event.getPlayer().sendMessage(message);
+                    event.setCancelled(true);
+                } else if (isChatLimitTime(name) && isSimilar(name, event.getMessage())) {
+                    String message = ChatColor.RED + "你疑似刷屏了";
+                    event.getPlayer().sendMessage(message);
+                    event.setCancelled(true);
+                } else if (isDirty(event.getMessage())) {
+                    String message = ChatColor.RED + "你疑似说脏话了";
+                    event.getPlayer().sendMessage(message);
+                    event.setCancelled(true);
+                } else {
+                    lastMessage.put(name, event.getMessage());
+                    lastTime.put(name, System.currentTimeMillis() / 1000);
+                }
+            }
+        }
+
+        private boolean isDirty(String message) {
+            for (String dirty : dirtySet)
+                if (message.toUpperCase().contains(dirty)) return true;
+            return false;
+        }
+
+        private boolean isSimilar(String name, String message) {
+            String last = lastMessage.get(name);
+            if (last != null) {
+                if (last.length() > 1) {
+                    int size = last.length() / 2;
+                    String head = last.substring(0, size);
+                    String tail = last.substring(size);
+                    return message.contains(head) || message.contains(tail);
+                } else
+                    return message.equals(last);
+            }
+            return false;
+        }
+
+        private boolean isNoCommandTime(String name) {
+            return commandWait.get(name) != null
+                    && commandWait.get(name) + getConfig().getLong("config.commandWait", 1) > System
+                    .currentTimeMillis() / 1000;
+        }
+
+        private boolean isNoChatTime(String name) {
+            /*
+             * long last = lastTime.get(name);long current =
 			 * System.currentTimeMillis() / 1000;long delay =
 			 * getConfig().getLong("config.chatWait", 1);
 			 */
-			return lastTime.get(name) != null
-					&& lastTime.get(name) + getConfig().getLong("config.chatWait", 1) > System.currentTimeMillis() / 1000;
-		}
+            return lastTime.get(name) != null
+                    && lastTime.get(name) + getConfig().getLong("config.chatWait", 1) > System.currentTimeMillis() / 1000;
+        }
 
-		private boolean isChatLimitTime(String name) {
-			return lastTime.get(name) != null
-					&& lastTime.get(name) + getConfig().getLong("config.chatLimit", 10) > System.currentTimeMillis() / 1000;
-		}
-	}
+        private boolean isChatLimitTime(String name) {
+            return lastTime.get(name) != null
+                    && lastTime.get(name) + getConfig().getLong("config.chatLimit", 10) > System.currentTimeMillis() / 1000;
+        }
+    }
 }
