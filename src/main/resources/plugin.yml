@@ -1,5 +1,5 @@
 name: AntiSpam
-version: 0.3.2
+version: ${project.version}
 main: com.mengcraft.server.AntiSpam
 
 permissions:
