@@ -72,7 +72,7 @@ public class SpamListener implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void handle(PlayerCommandPreprocessEvent event) {
         if (event.getPlayer().hasPermission("spam.bypass")) {
             ;
@@ -84,6 +84,8 @@ public class SpamListener implements Listener {
         } else if (dirty(event.getMessage())) {
             event.setCancelled(true);
             event.getPlayer().sendMessage(ChatColor.RED + "您的指令中含有屏蔽字词");
+        } else {
+            time.put(event.getPlayer().getUniqueId(), AntiSpam.unixTime());
         }
     }
 
