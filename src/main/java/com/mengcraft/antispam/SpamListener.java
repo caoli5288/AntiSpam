@@ -48,7 +48,11 @@ public class SpamListener implements Listener {
     public void handle(AsyncPlayerChatEvent event) {
         if (event.getPlayer().hasPermission("spam.bypass")) {
             ;
-        } else if (spam(event.getPlayer(), event.getMessage())) {
+        } else check(event);
+    }
+
+    public void check(AsyncPlayerChatEvent event) {
+        if (spam(event.getPlayer(), event.getMessage())) {
             if (notNotify) {
                 Set<Player> set = event.getRecipients();
                 set.clear();
@@ -78,7 +82,11 @@ public class SpamListener implements Listener {
             ;
         } else if (whiteListed(event.getMessage())) {
             ;
-        } else if (spam(event.getPlayer())) {
+        } else check(event);
+    }
+
+    private void check(PlayerCommandPreprocessEvent event) {
+        if (spam(event.getPlayer())) {
             event.setCancelled(true);
             event.getPlayer().sendMessage(ChatColor.RED + "请不要过于频繁使用指令");
         } else if (dirty(event.getMessage())) {
