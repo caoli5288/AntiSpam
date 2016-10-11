@@ -78,7 +78,7 @@ public class SpamListener implements Listener {
             ;
         } else if (whiteListed(event.getMessage())) {
             ;
-        } else if (spam(event.getPlayer(), event.getMessage())) {
+        } else if (spam(event.getPlayer())) {
             event.setCancelled(true);
             event.getPlayer().sendMessage(ChatColor.RED + "请不要过于频繁使用指令");
         } else if (dirty(event.getMessage())) {
