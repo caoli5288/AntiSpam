@@ -1,13 +1,12 @@
 name: AntiSpam
 version: ${project.version}
-main: com.mengcraft.server.AntiSpam
+main: com.mengcraft.antispam.AntiSpam
 
 permissions:
-  spam.anti:
-    description: Default permission for this plug-in.
-    default: true
+  spam.bypass:
+    default: false
   spam.admin:
-    description: Operator permission for this plug-in.
+    description: Operator permission.
     default: op
 
 commands:

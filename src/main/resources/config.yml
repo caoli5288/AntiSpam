@@ -1,7 +1,8 @@
 config:
+  notNotify: false
   commandWait: 2
-  chatWait: 1
-  chatLimit: 10
+  chatWait: 2
+  chatLimit: 8
   dirtyList:
   - '你妈'
   commandWhiteList:
