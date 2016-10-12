@@ -57,6 +57,7 @@ public class SpamListener implements Listener {
                 Set<Player> set = event.getRecipients();
                 set.clear();
                 set.add(event.getPlayer());
+                event.setMessage(ChatColor.RESET + event.getMessage() + ChatColor.RESET);
             } else {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage(ChatColor.RED + "请不要刷屏或发送重复消息哦");
@@ -66,6 +67,7 @@ public class SpamListener implements Listener {
                 Set<Player> set = event.getRecipients();
                 set.clear();
                 set.add(event.getPlayer());
+                event.setMessage(ChatColor.RESET + event.getMessage() + ChatColor.RESET);
             } else {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage(ChatColor.RED + "请不要发送含有屏蔽字的消息");
