@@ -21,7 +21,7 @@ public class SpamCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command i, String label, String[] j) {
-        Iterator<String> it = ImmutableList.of(j).iterator();
+        Iterator<String> it = ImmutableList.copyOf(j).iterator();
         if (it.hasNext()) {
             return execute(sender, it.next(), it);
         } else {
