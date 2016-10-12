@@ -62,6 +62,7 @@ public class Similarity {
 
     public static Similarity process(String i, String j) {
         Similarity similarity = new Similarity();
+        if (i == null || j == null) return similarity;
         int ld = ld(i, j);
         similarity.distance = ld;
         similarity.similarity = similarity(ld, Math.max(i.length(), j.length()));
