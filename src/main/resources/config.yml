@@ -5,6 +5,8 @@ config:
   chatLimit: 8
   dirtyList:
   - '你妈'
+  - 'cao'
   commandWhiteList:
   - '/cj'
   - '/spam'
+debug: false

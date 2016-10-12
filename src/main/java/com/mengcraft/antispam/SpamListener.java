@@ -27,6 +27,7 @@ public class SpamListener implements Listener {
     private int wait;
     private int commandWait;
     private boolean notNotify;
+    private boolean debug;
 
     private final AntiSpam spam;
 
@@ -42,6 +43,7 @@ public class SpamListener implements Listener {
         commandWait = spam.getConfig().getInt("config.commandWait");
         notNotify = spam.getConfig().getBoolean("config.notNotify");
         whiteList = spam.getConfig().getStringList("config.commandWhiteList");
+        debug = spam.getConfig().getBoolean("debug");
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
@@ -53,21 +55,15 @@ public class SpamListener implements Listener {
 
     public void check(AsyncPlayerChatEvent event) {
         if (spam(event.getPlayer(), event.getMessage())) {
-            if (notNotify) {
-                Set<Player> set = event.getRecipients();
-                set.clear();
-                set.add(event.getPlayer());
-                event.setMessage(ChatColor.RESET + event.getMessage() + ChatColor.RESET);
-            } else {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage(ChatColor.RED + "请不要刷屏或发送重复消息哦");
-            }
+            event.setCancelled(true);
+            event.getPlayer().sendMessage(ChatColor.RED + "请不要刷屏或发送重复消息哦");
         } else if (dirty(event.getMessage())) {
             if (notNotify) {
                 Set<Player> set = event.getRecipients();
                 set.clear();
                 set.add(event.getPlayer());
-                event.setMessage(ChatColor.RESET + event.getMessage() + ChatColor.RESET);
+                event.setMessage(event.getMessage() + "§r§r");
+                if (debug) spam.getLogger().info("DEBUG #1");
             } else {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage(ChatColor.RED + "请不要发送含有屏蔽字的消息");
