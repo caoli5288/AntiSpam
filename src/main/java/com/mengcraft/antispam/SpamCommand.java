@@ -36,7 +36,7 @@ public class SpamCommand implements CommandExecutor {
     private boolean execute(CommandSender sender, String next, Iterator<String> it) {
         if (AntiSpam.eq(next, "list")) {
             sender.sendMessage(ChatColor.GOLD + "> 脏话列表");
-            for (String line : spam.getDirtySet()) {
+            for (String line : spam.getRaw()) {
                 sender.sendMessage(ChatColor.GOLD + "- " + line);
             }
             return true;
@@ -54,21 +54,15 @@ public class SpamCommand implements CommandExecutor {
     }
 
     private boolean remove(CommandSender sender, String next) {
-        if (spam.getDirtySet().remove(next.toUpperCase())) {
-            spam.save();
-            sender.sendMessage(ChatColor.GOLD + "操作已完成");
-            return true;
-        }
-        return false;
+        boolean remove = spam.removeFilter(next);
+        if (remove) sender.sendMessage(ChatColor.GOLD + "操作已完成");
+        return remove;
     }
 
     private boolean add(CommandSender sender, String next) {
-        if (spam.getDirtySet().add(next.toUpperCase())) {
-            spam.save();
-            sender.sendMessage(ChatColor.GOLD + "操作已完成");
-            return true;
-        }
-        return false;
+        boolean add = spam.addFilter(next);
+        if (add) sender.sendMessage(ChatColor.GOLD + "操作已完成");
+        return add;
     }
 
 }

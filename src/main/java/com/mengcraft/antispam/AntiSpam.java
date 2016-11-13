@@ -1,11 +1,12 @@
 package com.mengcraft.antispam;
 
+import com.mengcraft.antispam.filter.FilterChain;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -14,15 +15,16 @@ import java.util.Set;
 
 public class AntiSpam extends JavaPlugin {
 
-    private final Set<String> dirtySet = new HashSet<>();
+    private FilterChain filter;
+    private Set<String> raw;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
 
-        for (String line : getConfig().getStringList("config.dirtyList")) {
-            dirtySet.add(line.toUpperCase());
-        }
+        List<String> list = getConfig().getStringList("config.dirtyList");
+        raw = new HashSet<>(list);
+        filter = FilterChain.build(list);
 
         String[] lines = {
                 ChatColor.GREEN + "梦梦家高性能服务器出租店",
@@ -30,35 +32,47 @@ public class AntiSpam extends JavaPlugin {
         };
         getServer().getConsoleSender().sendMessage(lines);
 
-        try {
-            new Metrics(this).start();
-        } catch (IOException e) {
-            getLogger().warning(e.toString());
-        }
-
         getServer().getPluginManager().registerEvents(new SpamListener(this), this);
         getServer().getPluginCommand("spam").setExecutor(new SpamCommand(this));
-    }
 
-    public Set<String> getDirtySet() {
-        return dirtySet;
+        Metrics.start(this);
     }
 
     public void reload() {
-        reloadConfig();
-        if (!dirtySet.isEmpty()) dirtySet.clear();
-        for (String line : getConfig().getStringList("config.dirtyList")) {
-            dirtySet.add(line.toUpperCase());
-        }
+        List<String> list = getConfig().getStringList("config.dirtyList");
+        raw = new HashSet<>(list);
+        filter = FilterChain.build(list);
     }
 
-    public void save() {
-        getConfig().set("config.dirtyList", new ArrayList<>(dirtySet));
+    public boolean check(String i) {
+        return filter.check(i);
+    }
+
+    public boolean removeFilter(String in) {
+        boolean remove = raw.remove(in);
+        if (remove) {
+            save();
+            filter = FilterChain.build(raw);
+        }
+        return remove;
+    }
+
+    public boolean addFilter(String in) {
+        boolean add = raw.add(in);
+        if (add) {
+            filter.add(in);
+            save();
+        }
+        return add;
+    }
+
+    private void save() {
+        getConfig().set("config.dirtyList", new ArrayList<>(raw));
         saveConfig();
     }
 
-    public static boolean eq(Object i, Object j) {
-        return i == j || (i != null && i.equals(j));
+    protected Set<String> getRaw() {
+        return raw;
     }
 
     public static int unixTime() {
@@ -70,6 +84,10 @@ public class AntiSpam extends JavaPlugin {
             throw new ArithmeticException("integer overflow");
         }
         return (int) value;
+    }
+
+    public static boolean eq(Object i, Object j) {
+        return i == j || i.equals(j);
     }
 
 }
