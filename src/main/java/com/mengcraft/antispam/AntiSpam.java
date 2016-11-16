@@ -1,13 +1,19 @@
 package com.mengcraft.antispam;
 
 import com.mengcraft.antispam.filter.FilterChain;
+import com.mengcraft.simpleorm.DatabaseException;
+import com.mengcraft.simpleorm.EbeanHandler;
+import com.mengcraft.simpleorm.EbeanManager;
 import org.bukkit.ChatColor;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * GPLv2 license
@@ -17,13 +23,44 @@ public class AntiSpam extends JavaPlugin {
 
     private FilterChain filter;
     private Set<String> raw;
+    private boolean remote;
 
     @Override
     public void onEnable() {
-        saveDefaultConfig();
+        getConfig().options().copyDefaults(true);
+        saveConfig();
 
         List<String> list = getConfig().getStringList("config.dirtyList");
         raw = new HashSet<>(list);
+
+        if (getConfig().getBoolean("config.useRemoteList")) {
+            Plugin plugin = getServer().getPluginManager().getPlugin("SimpleORM");
+            if (plugin == null) {
+                getLogger().log(Level.SEVERE, "没有发现SimpleORM，远程列表无法开启");
+            } else {
+                EbeanHandler db = EbeanManager.DEFAULT.getHandler(this);
+                if (db.isNotInitialized()) {
+                    db.define(Bean.class);
+                    try {
+                        db.initialize();
+                        db.install();
+                        db.reflect();
+
+                        raw.addAll(db.find(Bean.class)
+                                .findList()
+                                .stream()
+                                .map(Bean::getLine)
+                                .collect(Collectors.toList()));
+
+                        remote = true;
+                    } catch (DatabaseException e) {
+                        getLogger().log(Level.SEVERE, "无法连接到数据库，请检查配置文件");
+                    }
+                }
+            }
+        }
+
+
         filter = FilterChain.build(list);
 
         String[] lines = {
@@ -41,6 +78,13 @@ public class AntiSpam extends JavaPlugin {
     public void reload() {
         List<String> list = getConfig().getStringList("config.dirtyList");
         raw = new HashSet<>(list);
+        if (remote) {
+            raw.addAll(getDatabase().find(Bean.class)
+                    .findList()
+                    .stream()
+                    .map(Bean::getLine)
+                    .collect(Collectors.toList()));
+        }
         filter = FilterChain.build(list);
     }
 

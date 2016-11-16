@@ -13,3 +13,5 @@ commands:
   spam:
     permission: spam.admin
     description: Operator command for this plug-in.
+
+softdepend: [SimpleORM]

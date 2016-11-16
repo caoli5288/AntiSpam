@@ -8,12 +8,22 @@
             <id>repo.md-5.net</id>
             <url>http://repo.md-5.net/content/groups/public/</url>
         </repository>
+        <repository>
+            <id>i5mc</id>
+            <url>http://ci.mengcraft.com:8080/plugin/repository/everything/</url>
+        </repository>
     </repositories>
     <dependencies>
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
             <version>1.7.10-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.mengcraft</groupId>
+            <artifactId>simpleorm</artifactId>
+            <version>0.3.3</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
@@ -28,5 +38,15 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>
