@@ -1,4 +1,4 @@
-package com.mengcraft.antispam;
+package com.mengcraft.antispam.entity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -10,7 +10,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "antispam_dirty")
-public class Bean {
+public class Dirty {
 
     @Id
     private int id;

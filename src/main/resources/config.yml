@@ -3,7 +3,8 @@ config:
   commandWait: 2
   chatWait: 2
   chatLimit: 8
-  useRemoteList: false
+  useRemote: false
+  log: false
   dirtyList:
   - '你妈'
   - 'cao'

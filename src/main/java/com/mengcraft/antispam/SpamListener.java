@@ -57,7 +57,7 @@ public class SpamListener implements Listener {
         if (spam(event.getPlayer(), event.getMessage())) {
             event.setCancelled(true);
             event.getPlayer().sendMessage(ChatColor.RED + "请不要刷屏或发送重复消息哦");
-        } else if (check(event.getMessage())) {
+        } else if (check(event.getPlayer(), event.getMessage())) {
             if (notNotify) {
                 Set<Player> set = event.getRecipients();
                 set.clear();
@@ -87,7 +87,7 @@ public class SpamListener implements Listener {
         if (spam(event.getPlayer())) {
             event.setCancelled(true);
             event.getPlayer().sendMessage(ChatColor.RED + "请不要过于频繁使用指令");
-        } else if (check(event.getMessage())) {
+        } else if (check(event.getPlayer(), event.getMessage())) {
             event.setCancelled(true);
             event.getPlayer().sendMessage(ChatColor.RED + "您的指令中含有屏蔽字词");
         } else {
@@ -107,8 +107,8 @@ public class SpamListener implements Listener {
         return false;
     }
 
-    private boolean check(String i) {
-        return spam.check(i);
+    private boolean check(Player p, String i) {
+        return spam.check(p, i);
     }
 
     private boolean spam(Player player, String str) {

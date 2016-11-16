@@ -1,10 +1,13 @@
 package com.mengcraft.antispam;
 
+import com.mengcraft.antispam.entity.Dirty;
+import com.mengcraft.antispam.entity.DirtyRecord;
 import com.mengcraft.antispam.filter.FilterChain;
 import com.mengcraft.simpleorm.DatabaseException;
 import com.mengcraft.simpleorm.EbeanHandler;
 import com.mengcraft.simpleorm.EbeanManager;
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -12,6 +15,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -23,43 +30,53 @@ public class AntiSpam extends JavaPlugin {
 
     private FilterChain filter;
     private Set<String> raw;
-    private boolean remote;
+
+    private boolean remoteEnabled;
+    private boolean logging;
+
+    private ExecutorService pool;
 
     @Override
     public void onEnable() {
         getConfig().options().copyDefaults(true);
         saveConfig();
 
+        logging = getConfig().getBoolean("config.log");
+
         List<String> list = getConfig().getStringList("config.dirtyList");
         raw = new HashSet<>(list);
 
-        if (getConfig().getBoolean("config.useRemoteList")) {
+        if (getConfig().getBoolean("config.useRemote")) {
             Plugin plugin = getServer().getPluginManager().getPlugin("SimpleORM");
             if (plugin == null) {
                 getLogger().log(Level.SEVERE, "没有发现SimpleORM，远程列表无法开启");
             } else {
                 EbeanHandler db = EbeanManager.DEFAULT.getHandler(this);
                 if (db.isNotInitialized()) {
-                    db.define(Bean.class);
+                    db.define(Dirty.class);
+                    db.define(DirtyRecord.class);
                     try {
                         db.initialize();
                         db.install();
                         db.reflect();
 
-                        raw.addAll(db.find(Bean.class)
+                        raw.addAll(db.find(Dirty.class)
                                 .findList()
                                 .stream()
-                                .map(Bean::getLine)
+                                .map(Dirty::getLine)
                                 .collect(Collectors.toList()));
 
-                        remote = true;
+                        remoteEnabled = true;
                     } catch (DatabaseException e) {
-                        getLogger().log(Level.SEVERE, "无法连接到数据库，请检查配置文件");
+                        getLogger().log(Level.SEVERE, "无法连接到数据库，请检查配置文件 <- " + e.getMessage());
                     }
                 }
             }
         }
 
+        if (logging && remoteEnabled) {
+            pool = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+        }
 
         filter = FilterChain.build(list);
 
@@ -78,18 +95,41 @@ public class AntiSpam extends JavaPlugin {
     public void reload() {
         List<String> list = getConfig().getStringList("config.dirtyList");
         raw = new HashSet<>(list);
-        if (remote) {
-            raw.addAll(getDatabase().find(Bean.class)
+        if (remoteEnabled) {
+            raw.addAll(getDatabase().find(Dirty.class)
                     .findList()
                     .stream()
-                    .map(Bean::getLine)
+                    .map(Dirty::getLine)
                     .collect(Collectors.toList()));
         }
         filter = FilterChain.build(list);
     }
 
-    public boolean check(String i) {
-        return filter.check(i);
+    @Override
+    public void onDisable() {
+        if (pool != null) {
+            pool.shutdown();
+            try {
+                pool.awaitTermination(1, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                getLogger().log(Level.SEVERE, "", e);
+            }
+        }
+    }
+
+    public boolean check(Player p, String i) {
+        boolean result = filter.check(i);
+        if (result && logging) {
+            if (remoteEnabled) {
+                DirtyRecord record = new DirtyRecord();
+                record.setPlayer(p.getName());
+                record.setChat(i);
+                pool.execute(() -> getDatabase().save(record));
+            } else {
+                getLogger().info(p.getName() + "|" + i);
+            }
+        }
+        return result;
     }
 
     public boolean removeFilter(String in) {
@@ -117,6 +157,14 @@ public class AntiSpam extends JavaPlugin {
 
     protected Set<String> getRaw() {
         return raw;
+    }
+
+    public boolean isLogging() {
+        return logging;
+    }
+
+    public boolean isRemoteEnabled() {
+        return remoteEnabled;
     }
 
     public static int unixTime() {
