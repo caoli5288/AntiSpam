@@ -20,6 +20,11 @@ public class RegularFilter extends Filter {
         return pattern.matcher(input).matches();
     }
 
+    @Override
+    public String toString() {
+        return "Regex -> " + pattern.toString();
+    }
+
     public static Filter build(String input) {
         Preconditions.checkArgument(input.length() > 0);
         Pattern compiled = Pattern.compile(input);

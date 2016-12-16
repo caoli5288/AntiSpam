@@ -2,11 +2,13 @@ package com.mengcraft.antispam;
 
 import com.mengcraft.antispam.entity.Dirty;
 import com.mengcraft.antispam.entity.DirtyRecord;
+import com.mengcraft.antispam.filter.Filter;
 import com.mengcraft.antispam.filter.FilterChain;
 import com.mengcraft.simpleorm.DatabaseException;
 import com.mengcraft.simpleorm.EbeanHandler;
 import com.mengcraft.simpleorm.EbeanManager;
 import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -86,13 +88,14 @@ public class AntiSpam extends JavaPlugin {
         };
         getServer().getConsoleSender().sendMessage(lines);
 
-        getServer().getPluginManager().registerEvents(new SpamListener(this), this);
+        getServer().getPluginManager().registerEvents(SpamListener.get(this), this);
         getServer().getPluginCommand("spam").setExecutor(new SpamCommand(this));
 
         Metrics.start(this);
     }
 
     public void reload() {
+        reloadConfig();
         List<String> list = getConfig().getStringList("config.dirtyList");
         raw = new HashSet<>(list);
         if (remoteEnabled) {
@@ -150,13 +153,15 @@ public class AntiSpam extends JavaPlugin {
         return add;
     }
 
+    public void sendFilterMessage(CommandSender p) {
+        for (Filter i : filter.getChain()) {
+            p.sendMessage(i.toString());
+        }
+    }
+
     private void save() {
         getConfig().set("config.dirtyList", new ArrayList<>(raw));
         saveConfig();
-    }
-
-    protected Set<String> getRaw() {
-        return raw;
     }
 
     public boolean isLogging() {
@@ -167,15 +172,12 @@ public class AntiSpam extends JavaPlugin {
         return remoteEnabled;
     }
 
-    public static int unixTime() {
-        return toIntExact(System.currentTimeMillis() / 1000);
+    public static boolean nil(Object i) {
+        return i == null;
     }
 
-    public static int toIntExact(long value) {
-        if ((int) value != value) {
-            throw new ArithmeticException("integer overflow");
-        }
-        return (int) value;
+    public static int now() {
+        return (int) System.currentTimeMillis() / 1000;
     }
 
     public static boolean eq(Object i, Object j) {

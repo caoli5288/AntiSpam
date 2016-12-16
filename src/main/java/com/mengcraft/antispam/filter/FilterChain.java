@@ -1,5 +1,7 @@
 package com.mengcraft.antispam.filter;
 
+import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -27,6 +29,15 @@ public class FilterChain extends Filter {
             return chain.add(RegularFilter.build(input.substring(1)));
         }
         return chain.add(Filter.build(input));
+    }
+
+    public List<Filter> getChain() {
+        return ImmutableList.copyOf(chain);
+    }
+
+    @Override
+    public String toString() {
+        return chain.toString();
     }
 
     public static FilterChain build(Collection<String> input) {

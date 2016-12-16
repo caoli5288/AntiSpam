@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.mengcraft.antispam.AntiSpam.nil;
+
 /**
  * Created on 16-10-11.
  */
@@ -31,10 +33,9 @@ public class SpamListener implements Listener {
 
     private final AntiSpam spam;
 
-    public SpamListener(AntiSpam spam) {
+    private SpamListener(AntiSpam spam) {
         this.spam = spam;
         reload();
-        instance = this;
     }
 
     public void reload() {
@@ -69,7 +70,7 @@ public class SpamListener implements Listener {
                 event.getPlayer().sendMessage(ChatColor.RED + "请不要发送含有屏蔽字的消息");
             }
         } else {
-            time.put(event.getPlayer().getUniqueId(), AntiSpam.unixTime());
+            time.put(event.getPlayer().getUniqueId(), AntiSpam.now());
             message.put(event.getPlayer().getUniqueId(), event.getMessage());
         }
     }
@@ -91,13 +92,13 @@ public class SpamListener implements Listener {
             event.setCancelled(true);
             event.getPlayer().sendMessage(ChatColor.RED + "您的指令中含有屏蔽字词");
         } else {
-            time.put(event.getPlayer().getUniqueId(), AntiSpam.unixTime());
+            time.put(event.getPlayer().getUniqueId(), AntiSpam.now());
         }
     }
 
     private boolean spam(Player player) {
         if (time.containsKey(player.getUniqueId()))
-            return time.get(player.getUniqueId()) + commandWait > AntiSpam.unixTime();
+            return time.get(player.getUniqueId()) + commandWait > AntiSpam.now();
         return false;
     }
 
@@ -114,7 +115,7 @@ public class SpamListener implements Listener {
     private boolean spam(Player player, String str) {
         if (time.containsKey(player.getUniqueId())) {
             int latest = time.get(player.getUniqueId());
-            int now = AntiSpam.unixTime();
+            int now = AntiSpam.now();
             if (latest + wait > now) {
                 return true;
             }
@@ -125,7 +126,10 @@ public class SpamListener implements Listener {
         return false;
     }
 
-    public static SpamListener getInstance() {
+    public static SpamListener get(AntiSpam spam) {
+        if (nil(instance)) {
+            instance = new SpamListener(spam);
+        }
         return instance;
     }
 

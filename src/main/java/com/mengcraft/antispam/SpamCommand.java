@@ -36,13 +36,11 @@ public class SpamCommand implements CommandExecutor {
     private boolean execute(CommandSender sender, String next, Iterator<String> it) {
         if (AntiSpam.eq(next, "list")) {
             sender.sendMessage(ChatColor.GOLD + "> 脏话列表");
-            for (String line : spam.getRaw()) {
-                sender.sendMessage(ChatColor.GOLD + "- " + line);
-            }
+            spam.sendFilterMessage(sender);
             return true;
         } else if (AntiSpam.eq(next, "reload")) {
             spam.reload();
-            SpamListener.getInstance().reload();
+            SpamListener.get(spam).reload();
             sender.sendMessage(ChatColor.GOLD + "操作已完成");
             return true;
         } else if (AntiSpam.eq(next, "add")) {
