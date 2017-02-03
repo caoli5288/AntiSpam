@@ -80,7 +80,7 @@ public class AntiSpam extends JavaPlugin {
             pool = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
         }
 
-        filter = FilterChain.build(list);
+        filter = FilterChain.build(raw);
 
         String[] lines = {
                 ChatColor.GREEN + "梦梦家高性能服务器出租店",
