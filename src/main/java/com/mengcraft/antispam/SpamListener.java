@@ -133,6 +133,11 @@ public class SpamListener implements Listener {
         return instance;
     }
 
+    public static SpamListener getInstance() {
+        if (nil(instance)) throw new IllegalStateException("null");
+        return instance;
+    }
+
     private static SpamListener instance;
 
 }
