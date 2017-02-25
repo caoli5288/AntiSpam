@@ -1,5 +1,6 @@
 package com.mengcraft.antispam;
 
+import lombok.val;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -25,6 +26,7 @@ public class SpamListener implements Listener {
     private final Map<UUID, String> message = new HashMap<>();
 
     private List<String> whiteList;
+    private int length;
     private int limit;
     private int wait;
     private int commandWait;
@@ -39,6 +41,7 @@ public class SpamListener implements Listener {
     }
 
     public void reload() {
+        length = spam.getConfig().getInt("config.chatLengthLimit");
         wait = spam.getConfig().getInt("config.chatWait");
         limit = spam.getConfig().getInt("config.chatLimit");
         commandWait = spam.getConfig().getInt("config.commandWait");
@@ -49,50 +52,48 @@ public class SpamListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void handle(AsyncPlayerChatEvent event) {
-        if (event.getPlayer().hasPermission("spam.bypass")) {
-            ;
-        } else check(event);
-    }
+        if (event.getPlayer().hasPermission("spam.bypass")) return;
 
-    public void check(AsyncPlayerChatEvent event) {
-        if (spam(event.getPlayer(), event.getMessage())) {
+        String message = event.getMessage();
+        val p = event.getPlayer();
+
+        if (length > 0 && message.length() > length) {// TODO Optional cutoff or notify
+            event.setMessage(message = message.substring(0, length));
+        }
+
+        if (spam(p, message)) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(ChatColor.RED + "请不要刷屏或发送重复消息哦");
-        } else if (check(event.getPlayer(), event.getMessage())) {
+            p.sendMessage(ChatColor.RED + "请不要刷屏或发送重复消息哦");
+        } else if (check(p, message)) {
             if (notNotify) {
                 Set<Player> set = event.getRecipients();
                 set.clear();
-                set.add(event.getPlayer());
-                event.setMessage(event.getMessage() + "§r§r");
+                set.add(p);
+                event.setMessage(message + "§r§r");
                 if (debug) spam.getLogger().info("DEBUG #1");
             } else {
                 event.setCancelled(true);
-                event.getPlayer().sendMessage(ChatColor.RED + "请不要发送含有屏蔽字的消息");
+                p.sendMessage(ChatColor.RED + "请不要发送含有屏蔽字的消息");
             }
         } else {
-            time.put(event.getPlayer().getUniqueId(), AntiSpam.now());
-            message.put(event.getPlayer().getUniqueId(), event.getMessage());
+            time.put(p.getUniqueId(), AntiSpam.now());
+            this.message.put(p.getUniqueId(), message);
         }
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void handle(PlayerCommandPreprocessEvent event) {
-        if (event.getPlayer().hasPermission("spam.bypass")) {
-            ;
-        } else if (whiteListed(event.getMessage())) {
-            ;
-        } else check(event);
-    }
+        if (event.getPlayer().hasPermission("spam.bypass") || whiteListed(event.getMessage())) return;
 
-    private void check(PlayerCommandPreprocessEvent event) {
-        if (spam(event.getPlayer())) {
+        val p = event.getPlayer();
+        if (spam(p)) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(ChatColor.RED + "请不要过于频繁使用指令");
-        } else if (check(event.getPlayer(), event.getMessage())) {
+            p.sendMessage(ChatColor.RED + "请不要过于频繁使用指令");
+        } else if (check(p, event.getMessage())) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(ChatColor.RED + "您的指令中含有屏蔽字词");
+            p.sendMessage(ChatColor.RED + "您的指令中含有屏蔽字词");
         } else {
-            time.put(event.getPlayer().getUniqueId(), AntiSpam.now());
+            time.put(p.getUniqueId(), AntiSpam.now());
         }
     }
 

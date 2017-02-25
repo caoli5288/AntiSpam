@@ -2,6 +2,7 @@ config:
   notNotify: false
   commandWait: 2
   chatWait: 2
+  chatLengthLimit: 32
   chatLimit: 8
   useRemote: false
   log: false
@@ -9,6 +10,9 @@ config:
   - '你妈'
   - 'cao'
   commandWhiteList:
-  - '/cj'
   - '/spam'
+  - '/l'
+  - '/login'
+  - '/r'
+  - '/register'
 debug: false
