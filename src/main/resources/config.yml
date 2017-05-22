@@ -14,5 +14,6 @@ config:
   - '/l'
   - '/login'
   - '/r'
+  - '/reg'
   - '/register'
 debug: false

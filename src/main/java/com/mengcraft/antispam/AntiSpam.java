@@ -1,5 +1,6 @@
 package com.mengcraft.antispam;
 
+import com.mengcraft.antispam.entity.DWhitelist;
 import com.mengcraft.antispam.entity.Dirty;
 import com.mengcraft.antispam.entity.DirtyRecord;
 import com.mengcraft.antispam.filter.Filter;
@@ -33,8 +34,8 @@ public class AntiSpam extends JavaPlugin {
     private FilterChain filter;
     private Set<String> raw;
 
-    private boolean remoteEnabled;
     private boolean logging;
+    boolean remoteEnabled;
 
     private ExecutorService pool;
 
@@ -56,6 +57,7 @@ public class AntiSpam extends JavaPlugin {
                 EbeanHandler db = EbeanManager.DEFAULT.getHandler(this);
                 if (db.isNotInitialized()) {
                     db.define(Dirty.class);
+                    db.define(DWhitelist.class);
                     db.define(DirtyRecord.class);
                     try {
                         db.initialize();

@@ -41,7 +41,7 @@ public class SpamCommand implements CommandExecutor {
         } else if (AntiSpam.eq(next, "reload")) {
             spam.reload();
             SpamListener.get(spam).reload();
-            sender.sendMessage(ChatColor.GOLD + "操作已完成");
+            sender.sendMessage(ChatColor.GOLD + "操作已完成，部分内容需重启插件重载");
             return true;
         } else if (AntiSpam.eq(next, "add")) {
             if (it.hasNext()) return add(sender, it.next());

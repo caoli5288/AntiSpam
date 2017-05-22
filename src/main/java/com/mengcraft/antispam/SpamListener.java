@@ -1,5 +1,6 @@
 package com.mengcraft.antispam;
 
+import com.mengcraft.antispam.entity.DWhitelist;
 import lombok.val;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import static com.mengcraft.antispam.AntiSpam.nil;
 
@@ -25,7 +27,7 @@ public class SpamListener implements Listener {
     private final Map<UUID, Integer> time = new HashMap<>();
     private final Map<UUID, String> message = new HashMap<>();
 
-    private List<String> whiteList;
+    private Pattern whiteList;
     private int length;
     private int limit;
     private int wait;
@@ -46,8 +48,12 @@ public class SpamListener implements Listener {
         limit = spam.getConfig().getInt("config.chatLimit");
         commandWait = spam.getConfig().getInt("config.commandWait");
         notNotify = spam.getConfig().getBoolean("config.notNotify");
-        whiteList = spam.getConfig().getStringList("config.commandWhiteList");
         debug = spam.getConfig().getBoolean("debug");
+        val l = spam.getConfig().getStringList("config.commandWhiteList");
+        if (spam.remoteEnabled) {
+            spam.getDatabase().find(DWhitelist.class).findList().forEach(i -> l.add(i.getLine()));
+        }
+        whiteList = buildRegPattern(l);
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
@@ -83,9 +89,8 @@ public class SpamListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void handle(PlayerCommandPreprocessEvent event) {
-        if (event.getPlayer().hasPermission("spam.bypass") || whiteListed(event.getMessage())) return;
-
         val p = event.getPlayer();
+        if (p.hasPermission("spam.bypass") || whiteList.matcher(event.getMessage()).matches()) return;
         if (spam(p)) {
             event.setCancelled(true);
             p.sendMessage(ChatColor.RED + "请不要过于频繁使用指令");
@@ -100,12 +105,6 @@ public class SpamListener implements Listener {
     private boolean spam(Player player) {
         if (time.containsKey(player.getUniqueId()))
             return time.get(player.getUniqueId()) + commandWait > AntiSpam.now();
-        return false;
-    }
-
-    private boolean whiteListed(String str) {
-        for (String s : whiteList)
-            if (str.startsWith(s)) return true;
         return false;
     }
 
@@ -134,9 +133,28 @@ public class SpamListener implements Listener {
         return instance;
     }
 
+    /**
+     * 给其他插件用的，别删。
+     *
+     * @return instance of this listener
+     */
     public static SpamListener getInstance() {
         if (nil(instance)) throw new IllegalStateException("null");
         return instance;
+    }
+
+    public static Pattern buildRegPattern(List<String> list) {
+        if (nil(list) || list.isEmpty()) return null;
+        StringBuilder b = new StringBuilder();
+        val i = list.iterator();
+        while (i.hasNext()) {
+            val l = i.next();
+            if (!l.isEmpty()) {
+                b.append(l);
+                if (i.hasNext()) b.append('|');
+            }
+        }
+        return Pattern.compile("^(" + b + ")(\\s+.*|$)");
     }
 
     private static SpamListener instance;
