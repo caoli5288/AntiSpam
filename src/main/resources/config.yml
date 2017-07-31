@@ -4,8 +4,8 @@ config:
   chatWait: 2
   chatLengthLimit: 32
   chatLimit: 8
-  useRemote: false
-  log: false
+  useRemote: true
+  log: true
   dirtyList:
   - '你妈'
   - 'cao'

@@ -8,12 +8,14 @@ import com.mengcraft.antispam.filter.FilterChain;
 import com.mengcraft.simpleorm.DatabaseException;
 import com.mengcraft.simpleorm.EbeanHandler;
 import com.mengcraft.simpleorm.EbeanManager;
+import lombok.val;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -126,10 +128,17 @@ public class AntiSpam extends JavaPlugin {
         boolean result = filter.check(i);
         if (result && logging) {
             if (remoteEnabled) {
-                DirtyRecord record = new DirtyRecord();
-                record.setPlayer(p.getName());
-                record.setChat(i);
-                pool.execute(() -> getDatabase().save(record));
+                val log = new DirtyRecord();
+                log.setPlayer(p.getName());
+                log.setChat(i);
+                log.setIp(p.getAddress().getAddress().getHostAddress());
+                val handle = RefHelper.invoke(p, "getHandle");
+                val conn = RefHelper.getField(handle, "playerConnection");
+                val mgr = RefHelper.getField(conn, "networkManager");
+                val net = RefHelper.getField(mgr, "channel");
+                SocketAddress srv = RefHelper.invoke(net, "localAddress");
+                log.setServer(srv.toString().substring(1));
+                pool.execute(() -> getDatabase().save(log));
             } else {
                 getLogger().info(p.getName() + "|" + i);
             }
