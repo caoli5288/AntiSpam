@@ -145,11 +145,12 @@ public class SpamListener implements Listener {
 
     public static Pattern buildRegPattern(List<String> list) {
         if (nil(list) || list.isEmpty()) return null;
-        StringBuilder b = new StringBuilder();
+        val b = new StringBuilder();
         val i = list.iterator();
         while (i.hasNext()) {
             val l = i.next();
-            if (!l.isEmpty()) {
+            if (!(nil(l) || l.isEmpty())) {
+                if (!(l.charAt(0) == '/')) b.append('/');
                 b.append(l);
                 if (i.hasNext()) b.append('|');
             }

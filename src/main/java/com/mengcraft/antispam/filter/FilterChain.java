@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.mengcraft.antispam.AntiSpam.nil;
+
 /**
  * Created on 16-11-13.
  */
@@ -43,7 +45,7 @@ public class FilterChain extends Filter {
     public static FilterChain build(Collection<String> input) {
         FilterChain chain = new FilterChain();
         for (String i : input) {
-            chain.add(i);
+            if (!(nil(i) || i.isEmpty())) chain.add(i);
         }
         return chain;
     }
