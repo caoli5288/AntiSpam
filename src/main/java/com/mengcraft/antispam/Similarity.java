@@ -8,8 +8,7 @@ public class Similarity {
     private int distance;
     private double similarity;
 
-    private static int min(int i, int j, int k) {
-        return Math.min(Math.min(i, j), k);
+    private Similarity() {
     }
 
     public int getDistance() {
@@ -18,6 +17,10 @@ public class Similarity {
 
     public double get() {
         return similarity;
+    }
+
+    private static int min(int i, int j, int k) {
+        return Math.min(Math.min(i, j), k);
     }
 
     private static int ld(String x, String y) {

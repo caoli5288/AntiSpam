@@ -9,6 +9,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.HashMap;
 import java.util.List;
@@ -60,30 +61,30 @@ public class SpamListener implements Listener {
     public void handle(AsyncPlayerChatEvent event) {
         if (event.getPlayer().hasPermission("spam.bypass")) return;
 
-        String message = event.getMessage();
+        String chat = event.getMessage();
         val p = event.getPlayer();
 
-        if (length > 0 && message.length() > length) {// TODO Optional cutoff or notify
-            event.setMessage(message = message.substring(0, length));
+        if (length > 0 && chat.length() > length) {// TODO Optional cutoff or notify
+            event.setMessage(chat = chat.substring(0, length));
         }
 
-        if (spam(p, message)) {
+        if (spam(p, chat)) {
             event.setCancelled(true);
             p.sendMessage(ChatColor.RED + "请不要刷屏或发送重复消息哦");
-        } else if (check(p, message)) {
+        } else if (check(p, chat)) {
             if (notNotify) {
                 Set<Player> set = event.getRecipients();
                 set.clear();
                 set.add(p);
-                event.setMessage(message + "§r§r");
+                event.setMessage(chat + "§r§r");
                 if (debug) spam.getLogger().info("DEBUG #1");
             } else {
                 event.setCancelled(true);
                 p.sendMessage(ChatColor.RED + "请不要发送含有屏蔽字的消息");
             }
         } else {
-            time.put(p.getUniqueId(), AntiSpam.now());
-            this.message.put(p.getUniqueId(), message);
+            time.put(p.getUniqueId(), AntiSpam.unixTime());
+            message.put(p.getUniqueId(), chat);
         }
     }
 
@@ -98,13 +99,20 @@ public class SpamListener implements Listener {
             event.setCancelled(true);
             p.sendMessage(ChatColor.RED + "您的指令中含有屏蔽字词");
         } else {
-            time.put(p.getUniqueId(), AntiSpam.now());
+            time.put(p.getUniqueId(), AntiSpam.unixTime());
         }
+    }
+
+    @EventHandler
+    public void handle(PlayerQuitEvent event) {
+        val id = event.getPlayer().getUniqueId();
+        time.remove(id);
+        message.remove(id);
     }
 
     private boolean spam(Player player) {
         if (time.containsKey(player.getUniqueId()))
-            return time.get(player.getUniqueId()) + commandWait > AntiSpam.now();
+            return time.get(player.getUniqueId()) + commandWait > AntiSpam.unixTime();
         return false;
     }
 
@@ -115,7 +123,8 @@ public class SpamListener implements Listener {
     private boolean spam(Player player, String str) {
         if (time.containsKey(player.getUniqueId())) {
             int latest = time.get(player.getUniqueId());
-            int now = AntiSpam.now();
+            int now = AntiSpam.unixTime();
+            if (latest > now) return false;// Fix time offset issue
             if (latest + wait > now) {
                 return true;
             }

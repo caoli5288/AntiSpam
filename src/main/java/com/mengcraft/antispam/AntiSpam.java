@@ -187,8 +187,8 @@ public class AntiSpam extends JavaPlugin {
         return i == null;
     }
 
-    public static int now() {
-        return (int) System.currentTimeMillis() / 1000;
+    public static int unixTime() {
+        return Math.toIntExact(System.currentTimeMillis() / 1000);
     }
 
     public static boolean eq(Object i, Object j) {
