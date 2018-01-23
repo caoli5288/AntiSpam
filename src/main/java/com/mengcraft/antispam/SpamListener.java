@@ -52,7 +52,7 @@ public class SpamListener implements Listener {
         debug = spam.getConfig().getBoolean("debug");
         val l = spam.getConfig().getStringList("config.commandWhiteList");
         if (spam.remoteEnabled) {
-            spam.getDatabase().find(DWhitelist.class).findList().forEach(i -> l.add(i.getLine()));
+            spam.getDataSource().find(DWhitelist.class).findList().forEach(i -> l.add(i.getLine()));
         }
         whiteList = buildRegPattern(l);
     }

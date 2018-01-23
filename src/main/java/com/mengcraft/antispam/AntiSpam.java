@@ -5,9 +5,10 @@ import com.mengcraft.antispam.entity.Dirty;
 import com.mengcraft.antispam.entity.DirtyRecord;
 import com.mengcraft.antispam.filter.Filter;
 import com.mengcraft.antispam.filter.FilterChain;
-import com.mengcraft.simpleorm.DatabaseException;
 import com.mengcraft.simpleorm.EbeanHandler;
 import com.mengcraft.simpleorm.EbeanManager;
+import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.val;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -21,8 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -41,7 +41,10 @@ public class AntiSpam extends JavaPlugin {
 
     private ExecutorService pool;
 
-    @Override
+    @Getter
+    private EbeanHandler dataSource;
+
+    @SneakyThrows
     public void onEnable() {
         getConfig().options().copyDefaults(true);
         saveConfig();
@@ -56,32 +59,29 @@ public class AntiSpam extends JavaPlugin {
             if (plugin == null) {
                 getLogger().log(Level.SEVERE, "没有发现SimpleORM，远程列表无法开启");
             } else {
-                EbeanHandler db = EbeanManager.DEFAULT.getHandler(this);
-                if (db.isNotInitialized()) {
-                    db.define(Dirty.class);
-                    db.define(DWhitelist.class);
-                    db.define(DirtyRecord.class);
-                    try {
-                        db.initialize();
-                        db.install();
-                        db.reflect();
+                dataSource = EbeanManager.DEFAULT.getHandler(this);
+                if (dataSource.isNotInitialized()) {
+                    dataSource.define(Dirty.class);
+                    dataSource.define(DWhitelist.class);
+                    dataSource.define(DirtyRecord.class);
 
-                        raw.addAll(db.find(Dirty.class)
-                                .findList()
-                                .stream()
-                                .map(Dirty::getLine)
-                                .collect(Collectors.toList()));
+                    dataSource.initialize();
+                    dataSource.install();
+                    dataSource.reflect();
 
-                        remoteEnabled = true;
-                    } catch (DatabaseException e) {
-                        getLogger().log(Level.SEVERE, "无法连接到数据库，请检查配置文件 <- " + e.getMessage());
-                    }
+                    raw.addAll(dataSource.find(Dirty.class)
+                            .findList()
+                            .stream()
+                            .map(Dirty::getLine)
+                            .collect(Collectors.toList()));
+
+                    remoteEnabled = true;
                 }
             }
         }
 
         if (logging && remoteEnabled) {
-            pool = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+            pool = Executors.newSingleThreadExecutor();
         }
 
         filter = FilterChain.build(raw);
@@ -103,7 +103,7 @@ public class AntiSpam extends JavaPlugin {
         List<String> list = getConfig().getStringList("config.dirtyList");
         raw = new HashSet<>(list);
         if (remoteEnabled) {
-            raw.addAll(getDatabase().find(Dirty.class)
+            raw.addAll(dataSource.find(Dirty.class)
                     .findList()
                     .stream()
                     .map(Dirty::getLine)
@@ -138,7 +138,7 @@ public class AntiSpam extends JavaPlugin {
                 val net = RefHelper.getField(mgr, "channel");
                 SocketAddress srv = RefHelper.invoke(net, "localAddress");
                 log.setServer(srv.toString().substring(1));
-                pool.execute(() -> getDatabase().save(log));
+                pool.execute(() -> dataSource.save(log));
             } else {
                 getLogger().info(p.getName() + "|" + i);
             }
