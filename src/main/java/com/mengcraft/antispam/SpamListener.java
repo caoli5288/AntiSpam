@@ -1,6 +1,8 @@
 package com.mengcraft.antispam;
 
 import com.mengcraft.antispam.entity.DWhitelist;
+import com.mengcraft.simpleorm.GenericTrigger;
+import com.mengcraft.simpleorm.ORM;
 import lombok.val;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -55,6 +57,22 @@ public class SpamListener implements Listener {
             spam.getDataSource().find(DWhitelist.class).findList().forEach(i -> l.add(i.getLine()));
         }
         whiteList = buildRegPattern(l);
+        try {
+            GenericTrigger trigger = ORM.getGenericTrigger();
+            trigger.on("anti_spam_valid", (params, res) -> {
+                Player p = (Player) params.get("player");
+                String msg = params.get("msg").toString();
+                if (spam(p, msg)) {
+                    res.put("result", "spam");
+                } else if (check(p, msg)) {
+                    res.put("result", "blacklist");
+                } else {
+                    res.put("result", "pass");
+                }
+            });
+        } catch (Exception e) {
+            spam.getLogger().warning("GenericTrigger not found. Update your SimpleORM or somethings may broken.");
+        }
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
